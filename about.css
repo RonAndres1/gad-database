@@ -119,3 +119,41 @@ nav a:hover{
     color:#555;
 
 }
+/* GFPS */
+
+.gfps-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+    margin-bottom:25px;
+}
+
+.gfps-table th{
+    background:#6A1B9A;
+    color:#fff;
+    padding:12px;
+    text-align:left;
+}
+
+.gfps-table td{
+    border:1px solid #ddd;
+    padding:12px;
+    vertical-align:top;
+    color:#555;
+}
+
+.gfps-table tr:nth-child(even){
+    background:#f8f5fb;
+}
+
+.gfps-table strong{
+    color:#6A1B9A;
+}
+
+.about-card h3{
+    color:#6A1B9A;
+    margin-top:25px;
+    margin-bottom:10px;
+    border-left:5px solid #6A1B9A;
+    padding-left:10px;
+}
