@@ -33,6 +33,18 @@
         <a href="gad-reports.html">GAD Accomplishment Reports</a>
         <a href="about.html">About</a>
     </nav>
+    <!-- WELCOME -->
+<section class="welcome-section">
+
+    <div class="welcome-marquee">
+        <span>
+            📢 WELCOME TO THE MUNICIPALITY OF GABALDON GENDER AND DEVELOPMENT (GAD) DATABASE SYSTEM — This website serves as the official repository of GAD Plans and Budget, GAD Accomplishment Reports, statistical data, and other Gender and Development information of the Municipality of Gabaldon.
+        </span>
+    </div>
+
+    <div class="current-datetime" id="currentDateTime"></div>
+
+</section>
 
     <!-- CARDS -->
     <section class="cards">
@@ -96,6 +108,37 @@
         </a>
 
     </section>
+</section>
 
+<script>
+
+function updateDateTime(){
+
+    const now = new Date();
+
+    const options = {
+        weekday:'long',
+        year:'numeric',
+        month:'long',
+        day:'numeric'
+    };
+
+    const date = now.toLocaleDateString('en-US', options);
+
+    const time = now.toLocaleTimeString('en-US');
+
+    document.getElementById("currentDateTime").innerHTML =
+    "📅 " + date + " &nbsp;&nbsp; | &nbsp;&nbsp; 🕒 " + time;
+
+}
+
+updateDateTime();
+
+setInterval(updateDateTime,1000);
+
+</script>
+
+</body>
+</html>
 </body>
 </html>
