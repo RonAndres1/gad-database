@@ -1,144 +1,2701 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>Gabaldon GAD Database</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- YOUR EXISTING CSS -->
+    <link rel="stylesheet"
+          href="style.css">
+
+    <!-- BOOTSTRAP ICONS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
+    <style>
+
+        /* =====================================================
+           GAD BUDGET MONITORING
+           ===================================================== */
+
+        .gad-monitor-section {
+
+            width: 90%;
+            max-width: 1200px;
+
+            margin: 35px auto;
+
+        }
+
+
+        .gad-monitor-card {
+
+            background: linear-gradient(
+                135deg,
+                #6a1b9a,
+                #8e24aa
+            );
+
+            color: white;
+
+            border-radius: 20px;
+
+            padding: 28px;
+
+            box-shadow:
+                0 8px 25px rgba(0,0,0,0.15);
+
+            cursor: pointer;
+
+            transition: 0.25s;
+
+        }
+
+
+        .gad-monitor-card:hover {
+
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 12px 30px rgba(0,0,0,0.20);
+
+        }
+
+
+        .gad-card-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 25px;
+
+        }
+
+
+        .gad-card-title {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+        }
+
+
+        .gad-card-title i {
+
+            font-size: 38px;
+
+        }
+
+
+        .gad-card-title h2 {
+
+            margin: 0;
+
+            font-size: 25px;
+
+        }
+
+
+        .gad-card-title p {
+
+            margin: 5px 0 0;
+
+            opacity: 0.85;
+
+        }
+
+
+        .gad-percent-box {
+
+            text-align: right;
+
+        }
+
+
+        .gad-percent {
+
+            font-size: 42px;
+
+            font-weight: bold;
+
+        }
+
+
+        .gad-percent-box span {
+
+            font-size: 14px;
+
+        }
+
+
+        .gad-progress {
+
+            height: 16px;
+
+            width: 100%;
+
+            background:
+                rgba(255,255,255,0.25);
+
+            border-radius: 20px;
+
+            overflow: hidden;
+
+            margin: 25px 0;
+
+        }
+
+
+        .gad-progress-fill {
+
+            height: 100%;
+
+            width: 0%;
+
+            background: white;
+
+            border-radius: 20px;
+
+            transition: width 0.5s ease;
+
+        }
+
+
+        .gad-card-details {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 15px;
+
+        }
+
+
+        .gad-detail {
+
+            background:
+                rgba(255,255,255,0.12);
+
+            padding: 15px;
+
+            border-radius: 12px;
+
+        }
+
+
+        .gad-detail small {
+
+            display: block;
+
+            opacity: 0.8;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .gad-detail strong {
+
+            font-size: 19px;
+
+        }
+
+
+        .gad-view-button {
+
+            display: inline-block;
+
+            margin-top: 20px;
+
+            background: white;
+
+            color: #6a1b9a;
+
+            padding: 11px 18px;
+
+            border-radius: 9px;
+
+            font-weight: bold;
+
+        }
+
+
+
+        /* =====================================================
+           MONITORING PANEL
+           ===================================================== */
+
+        #gadMonitoringPanel {
+
+            display: none;
+
+            width: 94%;
+
+            margin: 25px auto 50px;
+
+        }
+
+
+        .gad-panel {
+
+            background: white;
+
+            border-radius: 18px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 5px 20px rgba(0,0,0,0.10);
+
+        }
+
+
+        .gad-panel-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .gad-panel-header h2 {
+
+            margin: 0;
+
+            color: #6a1b9a;
+
+        }
+
+
+        .close-gad {
+
+            background: #6a1b9a;
+
+            color: white;
+
+            border: none;
+
+            border-radius: 8px;
+
+            padding: 9px 15px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+        }
+
+
+
+        /* =====================================================
+           SUMMARY CARDS
+           ===================================================== */
+
+        .gad-summary {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(5, 1fr);
+
+            gap: 15px;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        .gad-summary-card {
+
+            background: #f8f4fa;
+
+            border-left:
+                5px solid #6a1b9a;
+
+            padding: 16px;
+
+            border-radius: 10px;
+
+        }
+
+
+        .gad-summary-card small {
+
+            display: block;
+
+            color: #666;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .gad-summary-card strong {
+
+            font-size: 18px;
+
+        }
+
+
+
+        /* =====================================================
+           SEARCH
+           ===================================================== */
+
+        .gad-search {
+
+            width: 100%;
+
+            padding: 12px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            font-size: 15px;
+
+        }
+
+
+
+        /* =====================================================
+           TABLE
+           ===================================================== */
+
+        .gad-table-container {
+
+            width: 100%;
+
+            overflow-x: auto;
+
+            border-radius: 12px;
+
+        }
+
+
+        .gad-table {
+
+            width: 100%;
+
+            min-width: 1350px;
+
+            border-collapse: collapse;
+
+        }
+
+
+        .gad-table th {
+
+            background: #6a1b9a;
+
+            color: white;
+
+            padding: 12px;
+
+            text-align: left;
+
+            white-space: nowrap;
+
+        }
+
+
+        .gad-table td {
+
+            padding: 11px;
+
+            border-bottom:
+                1px solid #e5e5e5;
+
+            vertical-align: middle;
+
+        }
+
+
+        .gad-table tr:hover {
+
+            background: #faf7fc;
+
+        }
+
+
+        .money {
+
+            text-align: right;
+
+            white-space: nowrap;
+
+        }
+
+
+        .used-input {
+
+            width: 130px;
+
+            padding: 8px;
+
+            border:
+                1px solid #bbb;
+
+            border-radius: 7px;
+
+            text-align: right;
+
+            font-size: 14px;
+
+        }
+
+
+        .used-input:focus {
+
+            outline: 2px solid #8e24aa;
+
+            border-color: #8e24aa;
+
+        }
+
+
+
+        /* =====================================================
+           PROGRESS
+           ===================================================== */
+
+        .small-progress {
+
+            display: inline-block;
+
+            width: 85px;
+
+            height: 9px;
+
+            background: #e5e5e5;
+
+            border-radius: 20px;
+
+            overflow: hidden;
+
+            vertical-align: middle;
+
+            margin-right: 6px;
+
+        }
+
+
+        .small-progress-fill {
+
+            height: 100%;
+
+            width: 0%;
+
+            background: #4caf50;
+
+            border-radius: 20px;
+
+        }
+
+
+        .util-percent {
+
+            font-weight: bold;
+
+            white-space: nowrap;
+
+        }
+
+
+        .status {
+
+            font-weight: bold;
+
+            white-space: nowrap;
+
+        }
+
+
+        .status-ongoing {
+
+            color: #e08b00;
+
+        }
+
+
+        .status-complete {
+
+            color: #218838;
+
+        }
+
+
+        .status-none {
+
+            color: #777;
+
+        }
+
+
+        .status-over {
+
+            color: #c62828;
+
+        }
+
+
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 900px) {
+
+            .gad-card-header {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+            }
+
+
+            .gad-percent-box {
+
+                text-align: left;
+
+            }
+
+
+            .gad-summary {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+
+            .gad-card-details {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+        }
+
+
+        @media (max-width: 550px) {
+
+            .gad-summary {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .gad-monitor-section {
+
+                width: 94%;
+
+            }
+
+
+            .gad-monitor-card {
+
+                padding: 20px;
+
+            }
+
+
+            .gad-percent {
+
+                font-size: 34px;
+
+            }
+
+        }
+
+    </style>
+
 </head>
+
+
 <body>
 
-    <!-- HEADER -->
+
+<!-- =====================================================
+     HEADER
+     ===================================================== -->
+
 <header>
 
     <div class="header-content">
 
-        <img src="logo gabaldon.png" class="logo">
+        <img
+            src="logo gabaldon.png"
+            class="logo"
+        >
+
 
         <div class="header-text">
-            <h1>Municipality of Gabaldon</h1>
-            <h2>Gender and Development (GAD) Database System</h2>
+
+            <h1>
+                Municipality of Gabaldon
+            </h1>
+
+
+            <h2>
+                Gender and Development (GAD)
+                Database System
+            </h2>
+
         </div>
 
     </div>
 
 </header>
 
-    <!-- NAVIGATION -->
-    <nav>
-        <a href="index.html">Home</a>
-        <a href="gad-plan-budget.html">GAD Plan & Budget</a>
-        <a href="gad-reports.html">GAD Accomplishment Reports</a>
-        <a href="about.html">About</a>
-    </nav>
-    <!-- WELCOME -->
+
+
+<!-- =====================================================
+     NAVIGATION
+     ===================================================== -->
+
+<nav>
+
+    <a href="index.html">
+        Home
+    </a>
+
+
+    <a href="gad-plan-budget.html">
+        GAD Plan & Budget
+    </a>
+
+
+    <a href="gad-reports.html">
+        GAD Accomplishment Reports
+    </a>
+
+
+    <a href="about.html">
+        About
+    </a>
+
+    
+    <a href="about.html">
+        About
+    </a>
+
+</nav>
+
+
+
+<!-- =====================================================
+     WELCOME
+     ===================================================== -->
+
 <section class="welcome-section">
 
+
     <div class="welcome-marquee">
+
         <span>
-            📢 WELCOME TO THE MUNICIPALITY OF GABALDON GENDER AND DEVELOPMENT (GAD) DATABASE SYSTEM — This website serves as the official repository of GAD Plans and Budget, GAD Accomplishment Reports, statistical data, and other Gender and Development information of the Municipality of Gabaldon.
+
+            📢 WELCOME TO THE MUNICIPALITY OF GABALDON
+            GENDER AND DEVELOPMENT (GAD) DATABASE SYSTEM —
+            This website serves as the official repository of
+            GAD Plans and Budget, GAD Accomplishment Reports,
+            statistical data, and other Gender and Development
+            information of the Municipality of Gabaldon.
+
         </span>
+
     </div>
 
-    <div class="current-datetime" id="currentDateTime"></div>
+
+    <div
+        class="current-datetime"
+        id="currentDateTime"
+    ></div>
+
 
 </section>
 
-    <!-- CARDS -->
-    <section class="cards">
 
-        <!-- Total Population -->
-        <a href="population.html" class="card-link">
-            <div class="card">
-                <i class="bi bi-people-fill"></i>
-                <h3>Total Population</h3>
-                <p>39,934</p>
-            </div>
-        </a>
 
-        <!-- Female Population -->
-        <a href="female.html" class="card-link">
-           <a href="female.html" class="card-link">
-    <div class="card">
-        <i class="bi bi-gender-female"></i>
-        <h3>Female Population</h3>
-        <p>19,580</p>
-    </div>
-</a>
+<!-- =====================================================
+     POPULATION CARDS
+     ===================================================== -->
 
-        <!-- Male Population -->
-        <a href="male.html" class="card-link">
-           <a href="male.html" class="card-link">
+<section class="cards">
 
-    <div class="card">
-        <i class="bi bi-gender-male"></i>
-        <h3>Male Population</h3>
-        <p>20,354</p>
-    </div>
 
-</a>
+    <!-- TOTAL POPULATION -->
 
-        <!-- Solo Parents -->
-        <a href="solo-parents.html" class="card-link">
-            <div class="card">
-                <i class="bi bi-person-hearts"></i>
-                <h3>Solo Parents</h3>
-                <p>798</p>
-            </div>
-        </a>
+    <a
+        href="population.html"
+        class="card-link"
+    >
 
-        <!-- PWD -->
-        <a href="pwd.html" class="card-link">
-            <div class="card">
-                <i class="bi bi-person-wheelchair"></i>
-                <h3>PWD</h3>
-                <p>602</p>
-            </div>
-        </a>
+        <div class="card">
 
-        <!-- Senior Citizens -->
-        <a href="senior-citizens.html" class="card-link">
-            <div class="card">
-                <i class="bi bi-person-vcard-fill"></i>
-                <h3>Senior Citizens</h3>
-                <p>3,993</p>
-            </div>
-        </a>
+            <i class="bi bi-people-fill"></i>
 
-    </section>
+            <h3>
+                Total Population
+            </h3>
+
+            <p>
+                39,934
+            </p>
+
+        </div>
+
+    </a>
+
+
+
+    <!-- FEMALE -->
+
+    <a
+        href="female.html"
+        class="card-link"
+    >
+
+        <div class="card">
+
+            <i class="bi bi-gender-female"></i>
+
+            <h3>
+                Female Population
+            </h3>
+
+            <p>
+                19,580
+            </p>
+
+        </div>
+
+    </a>
+
+
+
+    <!-- MALE -->
+
+    <a
+        href="male.html"
+        class="card-link"
+    >
+
+        <div class="card">
+
+            <i class="bi bi-gender-male"></i>
+
+            <h3>
+                Male Population
+            </h3>
+
+            <p>
+                20,354
+            </p>
+
+        </div>
+
+    </a>
+
+
+
+    <!-- SOLO PARENTS -->
+
+    <a
+        href="solo-parents.html"
+        class="card-link"
+    >
+
+        <div class="card">
+
+            <i class="bi bi-person-hearts"></i>
+
+            <h3>
+                Solo Parents
+            </h3>
+
+            <p>
+                798
+            </p>
+
+        </div>
+
+    </a>
+
+
+
+    <!-- PWD -->
+
+    <a
+        href="pwd.html"
+        class="card-link"
+    >
+
+        <div class="card">
+
+            <i class="bi bi-person-wheelchair"></i>
+
+            <h3>
+                PWD
+            </h3>
+
+            <p>
+                602
+            </p>
+
+        </div>
+
+    </a>
+
+
+
+    <!-- SENIOR CITIZENS -->
+
+    <a
+        href="senior-citizens.html"
+        class="card-link"
+    >
+
+        <div class="card">
+
+            <i class="bi bi-person-vcard-fill"></i>
+
+            <h3>
+                Senior Citizens
+            </h3>
+
+            <p>
+                3,993
+            </p>
+
+        </div>
+
+    </a>
+
+
 </section>
+
+
+
+<!-- =====================================================
+     GAD BUDGET MONITORING CARD
+     ===================================================== -->
+
+<section class="gad-monitor-section">
+
+
+    <div
+        class="gad-monitor-card"
+        onclick="toggleGADMonitoring()"
+    >
+
+
+        <div class="gad-card-header">
+
+
+            <div class="gad-card-title">
+
+                <i class="bi bi-bar-chart-fill"></i>
+
+
+                <div>
+
+                    <h2>
+                        GAD Budget Monitoring
+                    </h2>
+
+
+                    <p>
+                        Fiscal Year 2026
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="gad-percent-box">
+
+                <div
+                    class="gad-percent"
+                    id="dashboardUtilization"
+                >
+                    0.00%
+                </div>
+
+
+                <span>
+                    Fund Utilization
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- PROGRESS -->
+
+        <div class="gad-progress">
+
+            <div
+                class="gad-progress-fill"
+                id="dashboardProgress"
+            ></div>
+
+        </div>
+
+
+
+        <!-- DETAILS -->
+
+        <div class="gad-card-details">
+
+
+            <div class="gad-detail">
+
+                <small>
+                    Total GAD Budget
+                </small>
+
+
+                <strong id="dashboardTotalBudget">
+
+                    ₱15,340,207.84
+
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-detail">
+
+                <small>
+                    Amount Utilized
+                </small>
+
+
+                <strong id="dashboardAmountUsed">
+
+                    ₱0.00
+
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-detail">
+
+                <small>
+                    Remaining Budget
+                </small>
+
+
+                <strong id="dashboardRemaining">
+
+                    ₱15,340,207.84
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="gad-view-button">
+
+            CLICK TO VIEW GAD PROGRAMS
+
+            <i class="bi bi-arrow-down-circle"></i>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     GAD MONITORING PANEL
+     ===================================================== -->
+
+<section id="gadMonitoringPanel">
+
+
+    <div class="gad-panel">
+
+
+        <!-- HEADER -->
+
+        <div class="gad-panel-header">
+
+
+            <div>
+
+                <h2>
+                    📊 GAD Budget Monitoring — FY 2026
+                </h2>
+
+
+                <p>
+                    GAD Plan and Budget 2026
+                </p>
+
+            </div>
+
+
+            <button
+                class="close-gad"
+                onclick="toggleGADMonitoring()"
+            >
+
+                <i class="bi bi-x-circle"></i>
+
+                Close
+
+            </button>
+
+        </div>
+
+
+
+        <!-- SUMMARY -->
+
+        <div class="gad-summary">
+
+
+            <div class="gad-summary-card">
+
+                <small>
+                    Total Programs
+                </small>
+
+
+                <strong id="totalPrograms">
+                    0
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-summary-card">
+
+                <small>
+                    Total PS
+                </small>
+
+
+                <strong id="totalPS">
+                    ₱0.00
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-summary-card">
+
+                <small>
+                    Total MOOE
+                </small>
+
+
+                <strong id="totalMOOE">
+                    ₱0.00
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-summary-card">
+
+                <small>
+                    Total CO
+                </small>
+
+
+                <strong id="totalCO">
+                    ₱0.00
+                </strong>
+
+            </div>
+
+
+
+            <div class="gad-summary-card">
+
+                <small>
+                    Official Total GAD Budget
+                </small>
+
+
+                <strong>
+                    ₱15,340,207.84
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- SEARCH -->
+
+        <input
+            type="text"
+            id="gadSearch"
+            class="gad-search"
+            placeholder="🔎 Search program or responsible office..."
+        >
+
+
+
+        <!-- TABLE -->
+
+        <div class="gad-table-container">
+
+
+            <table class="gad-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+
+                        <th>
+                            Relevant LGU Program or Project
+                        </th>
+
+
+                        <th>
+                            Lead / Responsible Office
+                        </th>
+
+
+                        <th>
+                            PS
+                        </th>
+
+
+                        <th>
+                            MOOE
+                        </th>
+
+
+                        <th>
+                            CO
+                        </th>
+
+
+                        <th>
+                            Total Program Budget
+                        </th>
+
+
+                        <th>
+                            Amount Used
+                        </th>
+
+
+                        <th>
+                            Remaining
+                        </th>
+
+
+                        <th>
+                            Utilization
+                        </th>
+
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="gadProgramTable"
+                ></tbody>
+
+
+            </table>
+
+        </div>
+
+
+
+        <br>
+
+
+        <small>
+
+            💡 Enter the actual amount utilized
+            in the <b>Amount Used</b> column.
+            The remaining balance and utilization
+            percentage will automatically update.
+
+        </small>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     JAVASCRIPT
+     ===================================================== -->
 
 <script>
 
-function updateDateTime(){
 
-    const now = new Date();
+/* =====================================================
+   OFFICIAL TOTAL GAD BUDGET
+   ===================================================== */
 
-    const options = {
-        weekday:'long',
-        year:'numeric',
-        month:'long',
-        day:'numeric'
-    };
+const TOTAL_GAD_BUDGET =
+    15340207.84;
 
-    const date = now.toLocaleDateString('en-US', options);
 
-    const time = now.toLocaleTimeString('en-US');
 
-    document.getElementById("currentDateTime").innerHTML =
-    "📅 " + date + " &nbsp;&nbsp; | &nbsp;&nbsp; 🕒 " + time;
+/* =====================================================
+   GAD PROGRAM DATA
+   ===================================================== */
+
+const gadPrograms = [
+
+    {
+        program:
+        "Free Mobile Registration of Birth for IPs, Indigents & Senior Citizens in the communities",
+        mooe: 10000,
+        ps: 0,
+        co: 0,
+        office: "MCRO"
+    },
+
+    {
+        program:
+        "Mass Wedding of IPs & Indigents for Responsible Parenthood Program",
+        mooe: 150000,
+        ps: 0,
+        co: 0,
+        office: "MCRO"
+    },
+
+    {
+        program:
+        "PSA Negative & CENOMAR Assistance for IPs & Indigents for Civil Registration, Mass Wedding, and legitimation",
+        mooe: 80000,
+        ps: 0,
+        co: 0,
+        office: "MCRO"
+    },
+
+    {
+        program:
+        "BREQS-LGU (Income Generating Project)",
+        mooe: 50000,
+        ps: 0,
+        co: 0,
+        office: "MCRO"
+    },
+
+    {
+        program:
+        "Productivity Skills and Livelihood Development Program (KALINGA)",
+        mooe: 80000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Women in Specially Difficult Situations",
+        mooe: 60000,
+        ps: -21100,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Child Development Services",
+        mooe: 1608000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Self-Awareness Upliftment Program",
+        mooe: 120000,
+        ps: 0,
+        co: 0,
+        office: "MO / HRMO / MSWDO"
+    },
+
+    {
+        program:
+        "Protection for the Welfare of Socially Disadvantaged Women",
+        mooe: 15000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "LGU Recognition to Special Gender Needs",
+        mooe: 50000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Protection for the Welfare of Socially Disadvantaged Women",
+        mooe: 25000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Protection for the Welfare of Socially Disadvantaged Children",
+        mooe: 25000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "Maternal & Child Health Program",
+        mooe: 370000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Nutrition Program (Celebration & Evaluation)",
+        mooe: 35000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Non-Communicable Diseases (Lifestyle Modification Program)",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Mental Health Program",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "STI / HIV / AIDS Program",
+        mooe: 50000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Dengue / Malaria Prevention & Control Program",
+        mooe: 200000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Rabies Prevention & Control Program",
+        mooe: 500000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Tuberculosis Control Program",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Medicine Access Program",
+        mooe: 1000000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "SANDUGO Protection Program",
+        mooe: 240000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "BHW Incentives",
+        mooe: 3529500,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Adolescent and Youth Health Program",
+        mooe: 20000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Preparedness capability of health teams",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Family Planning & Reproductive Health Services for Responsible Parenthood",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Food and Water Safety",
+        mooe: 10000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Oral Health Services",
+        mooe: 70000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Sports Development",
+        mooe: 600000,
+        ps: 0,
+        co: 0,
+        office: "SBO"
+    },
+
+    {
+        program:
+        "Scholarship Program",
+        mooe: 2500000,
+        ps: 0,
+        co: 0,
+        office: "MO / SBO"
+    },
+
+    {
+        program:
+        "Self-Employment Assistance (SEA)",
+        mooe: 400000,
+        ps: 0,
+        co: 0,
+        office: "MO / LCE / MSWDO / MTO"
+    },
+
+    {
+        program:
+        "Self-Employment Assistance (SEA) for Solo Parents",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "Not Specified"
+    },
+
+    {
+        program:
+        "Livelihood Program for Solo Parents",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MO / LCE"
+    },
+
+    {
+        program:
+        "Women & Solo Parents Empowerment Program",
+        mooe: 200000,
+        ps: 0,
+        co: 0,
+        office: "MO / LCE"
+    },
+
+    {
+        program:
+        "Seminar-Workshops for the LGPS and other LGU personnel",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MO / GAD Fund"
+    },
+
+    {
+        program:
+        "Training of BHW",
+        mooe: 70000,
+        ps: 0,
+        co: 0,
+        office: "RHU / LCE"
+    },
+
+    {
+        program:
+        "Personnel Upliftment Program",
+        mooe: 50000,
+        ps: 0,
+        co: 0,
+        office: "MHO / RHU"
+    },
+
+    {
+        program:
+        "Value Orientation Workshop",
+        mooe: 50000,
+        ps: 0,
+        co: 0,
+        office: "HRMO"
+    },
+
+    {
+        program:
+        "Learning and Development (Balik-Aral, CSC Review, Board Review, etc.)",
+        mooe: 160000,
+        ps: 0,
+        co: 0,
+        office: "HRMO"
+    },
+
+    {
+        program:
+        "Personnel Recognition Program",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "HRMO"
+    },
+
+    {
+        program:
+        "Personnel Upliftment Program",
+        mooe: 20000,
+        ps: 0,
+        co: 0,
+        office: "MSWDO"
+    },
+
+    {
+        program:
+        "CSC Career Service Exam & Board Review Assistance",
+        mooe: 60000,
+        ps: 0,
+        co: 0,
+        office: "HRMO"
+    },
+
+    {
+        program:
+        "Babae Ka, Hindi Babae Lang",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MO / HRMO"
+    },
+
+    {
+        program:
+        "Personnel Recognition Program",
+        mooe: 210000,
+        ps: 0,
+        co: 0,
+        office: "MO / HRMO"
+    },
+
+    {
+        program:
+        "Health Fitness & Wellness Program",
+        mooe: 100000,
+        ps: 0,
+        co: 0,
+        office: "MO / HRMO"
+    },
+
+    {
+        program:
+        "Salaries and Wages of Personnel for Implementing GAD Program",
+        mooe: 0,
+        ps: 478853.92,
+        co: 172587.72,
+        office: "GAD Fund"
+    },
+
+    {
+        program:
+        "Scholarship Program",
+        mooe: 500000,
+        ps: 0,
+        co: 0,
+        office: "MO / LCE"
+    },
+
+    {
+        program:
+        "Salaries and Wages of Personnel for Implementing GAD Program",
+        mooe: 0,
+        ps: 239426.96,
+        co: 0,
+        office: "GAD Fund"
+    },
+
+    {
+        program:
+        "Salaries and Wages of Personnel for Implementing GAD Program",
+        mooe: 0,
+        ps: 239426.96,
+        co: 0,
+        office: "GAD Fund"
+    },
+
+    {
+        program:
+        "Salaries and Wages of Personnel for Implementing GAD Program",
+        mooe: 80000,
+        ps: 0,
+        co: 0,
+        office: "GAD Fund"
+    }
+
+];
+
+
+
+/* =====================================================
+   STORAGE
+   ===================================================== */
+
+const STORAGE_KEY =
+    "GABALDON_GAD_AMOUNT_USED_2026";
+
+
+function getUsedData() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+        ) || {};
+
+    }
+
+    catch {
+
+        return {};
+
+    }
 
 }
 
+
+function saveUsedData(data) {
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(data)
+    );
+
+}
+
+
+
+/* =====================================================
+   PESO FORMAT
+   ===================================================== */
+
+function peso(amount) {
+
+    return new Intl.NumberFormat(
+        "en-PH",
+        {
+
+            style: "currency",
+
+            currency: "PHP",
+
+            minimumFractionDigits: 2
+
+        }
+    ).format(amount);
+
+}
+
+
+
+/* =====================================================
+   HTML SECURITY
+   ===================================================== */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text;
+
+    return div.innerHTML;
+
+}
+
+
+
+/* =====================================================
+   UPDATE SINGLE ROW
+   ===================================================== */
+
+function updateRow(
+    row,
+    index,
+    value
+) {
+
+
+    const program =
+        gadPrograms[index];
+
+
+    const budget =
+        program.ps +
+        program.mooe +
+        program.co;
+
+
+    const remaining =
+        budget - value;
+
+
+    const percentage =
+        budget > 0
+            ? (value / budget) * 100
+            : 0;
+
+
+    const progress =
+        Math.min(
+            Math.max(
+                percentage,
+                0
+            ),
+            100
+        );
+
+
+    const remainingElement =
+        row.querySelector(
+            ".remaining-value"
+        );
+
+
+    if (remainingElement) {
+
+        remainingElement.textContent =
+            peso(remaining);
+
+    }
+
+
+
+    const progressElement =
+        row.querySelector(
+            ".small-progress-fill"
+        );
+
+
+    if (progressElement) {
+
+        progressElement.style.width =
+            progress + "%";
+
+    }
+
+
+
+    const percentElement =
+        row.querySelector(
+            ".util-percent"
+        );
+
+
+    if (percentElement) {
+
+        percentElement.textContent =
+            percentage.toFixed(2) + "%";
+
+    }
+
+
+
+    const statusElement =
+        row.querySelector(
+            ".status"
+        );
+
+
+    if (statusElement) {
+
+
+        let status =
+            "Not Started";
+
+
+        let statusClass =
+            "status-none";
+
+
+        if (value > budget) {
+
+            status =
+                "Over Budget";
+
+            statusClass =
+                "status-over";
+
+        }
+
+        else if (
+            value === budget &&
+            budget > 0
+        ) {
+
+            status =
+                "Fully Utilized";
+
+            statusClass =
+                "status-complete";
+
+        }
+
+        else if (value > 0) {
+
+            status =
+                "Ongoing";
+
+            statusClass =
+                "status-ongoing";
+
+        }
+
+
+        statusElement.textContent =
+            status;
+
+
+        statusElement.className =
+            "status " +
+            statusClass;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   RENDER PROGRAMS
+   ===================================================== */
+
+function renderGADPrograms() {
+
+
+    const table =
+        document.getElementById(
+            "gadProgramTable"
+        );
+
+
+    const saved =
+        getUsedData();
+
+
+    table.innerHTML =
+        "";
+
+
+    let totalPS =
+        0;
+
+
+    let totalMOOE =
+        0;
+
+
+    let totalCO =
+        0;
+
+
+
+    gadPrograms.forEach(
+        function(program, index) {
+
+
+            const budget =
+                program.ps +
+                program.mooe +
+                program.co;
+
+
+            const used =
+                Number(
+                    saved[index] || 0
+                );
+
+
+            const percentage =
+                budget > 0
+                    ? (
+                        used /
+                        budget
+                    ) * 100
+                    : 0;
+
+
+            const progress =
+                Math.min(
+                    Math.max(
+                        percentage,
+                        0
+                    ),
+                    100
+                );
+
+
+            totalPS +=
+                program.ps;
+
+
+            totalMOOE +=
+                program.mooe;
+
+
+            totalCO +=
+                program.co;
+
+
+
+            let status =
+                "Not Started";
+
+
+            let statusClass =
+                "status-none";
+
+
+            if (used > budget) {
+
+                status =
+                    "Over Budget";
+
+                statusClass =
+                    "status-over";
+
+            }
+
+            else if (
+                used === budget &&
+                budget > 0
+            ) {
+
+                status =
+                    "Fully Utilized";
+
+                statusClass =
+                    "status-complete";
+
+            }
+
+            else if (used > 0) {
+
+                status =
+                    "Ongoing";
+
+                statusClass =
+                    "status-ongoing";
+
+            }
+
+
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            row.dataset.search =
+                (
+                    program.program +
+                    " " +
+                    program.office
+                ).toLowerCase();
+
+
+
+            row.innerHTML = `
+
+                <td>
+                    ${index + 1}
+                </td>
+
+
+                <td>
+
+                    <strong>
+
+                        ${escapeHTML(
+                            program.program
+                        )}
+
+                    </strong>
+
+                </td>
+
+
+                <td>
+
+                    ${escapeHTML(
+                        program.office
+                    )}
+
+                </td>
+
+
+                <td class="money">
+
+                    ${peso(program.ps)}
+
+                </td>
+
+
+                <td class="money">
+
+                    ${peso(program.mooe)}
+
+                </td>
+
+
+                <td class="money">
+
+                    ${peso(program.co)}
+
+                </td>
+
+
+                <td class="money">
+
+                    ${peso(budget)}
+
+                </td>
+
+
+                <td class="money">
+
+                    <input
+
+                        class="used-input"
+
+                        type="number"
+
+                        min="0"
+
+                        step="0.01"
+
+                        value="${used}"
+
+                        data-index="${index}"
+
+                    >
+
+                </td>
+
+
+                <td class="money">
+
+                    <span
+                        class="remaining-value"
+                    >
+
+                        ${peso(
+                            budget - used
+                        )}
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="small-progress"
+                    >
+
+                        <span
+
+                            class=
+                            "small-progress-fill"
+
+                            style=
+                            "width:${progress}%"
+
+                        ></span>
+
+                    </span>
+
+
+                    <span
+                        class="util-percent"
+                    >
+
+                        ${percentage.toFixed(2)}%
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class=
+                        "status ${statusClass}"
+                    >
+
+                        ${status}
+
+                    </span>
+
+                </td>
+
+            `;
+
+
+            table.appendChild(
+                row
+            );
+
+        }
+    );
+
+
+
+    document.getElementById(
+        "totalPrograms"
+    ).textContent =
+        gadPrograms.length;
+
+
+    document.getElementById(
+        "totalPS"
+    ).textContent =
+        peso(totalPS);
+
+
+    document.getElementById(
+        "totalMOOE"
+    ).textContent =
+        peso(totalMOOE);
+
+
+    document.getElementById(
+        "totalCO"
+    ).textContent =
+        peso(totalCO);
+
+}
+
+
+
+/* =====================================================
+   INPUT EVENT
+   IMPORTANT:
+   HINDI NIRE-RENDER ANG BUONG TABLE
+   ===================================================== */
+
+document.addEventListener(
+    "input",
+    function(event) {
+
+
+        if (
+            !event.target.classList.contains(
+                "used-input"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const input =
+            event.target;
+
+
+        const index =
+            Number(
+                input.dataset.index
+            );
+
+
+        const value =
+            Number(
+                input.value || 0
+            );
+
+
+        /*
+           SAVE DATA
+        */
+
+        const data =
+            getUsedData();
+
+
+        data[index] =
+            value;
+
+
+        saveUsedData(
+            data
+        );
+
+
+        /*
+           UPDATE CURRENT ROW ONLY
+        */
+
+        const row =
+            input.closest(
+                "tr"
+            );
+
+
+        if (row) {
+
+            updateRow(
+                row,
+                index,
+                value
+            );
+
+        }
+
+
+        /*
+           UPDATE DASHBOARD
+        */
+
+        updateGADDashboard();
+
+    }
+);
+
+
+
+/* =====================================================
+   DASHBOARD
+   ===================================================== */
+
+function updateGADDashboard() {
+
+
+    const saved =
+        getUsedData();
+
+
+    let amountUsed =
+        0;
+
+
+    gadPrograms.forEach(
+        function(program, index) {
+
+            amountUsed +=
+                Number(
+                    saved[index] || 0
+                );
+
+        }
+    );
+
+
+    let remaining =
+        TOTAL_GAD_BUDGET -
+        amountUsed;
+
+
+    if (remaining < 0) {
+
+        remaining = 0;
+
+    }
+
+
+    const utilization =
+        TOTAL_GAD_BUDGET > 0
+
+            ? (
+                amountUsed /
+                TOTAL_GAD_BUDGET
+            ) * 100
+
+            : 0;
+
+
+
+    document.getElementById(
+        "dashboardTotalBudget"
+    ).textContent =
+        peso(
+            TOTAL_GAD_BUDGET
+        );
+
+
+    document.getElementById(
+        "dashboardAmountUsed"
+    ).textContent =
+        peso(
+            amountUsed
+        );
+
+
+    document.getElementById(
+        "dashboardRemaining"
+    ).textContent =
+        peso(
+            remaining
+        );
+
+
+    document.getElementById(
+        "dashboardUtilization"
+    ).textContent =
+        utilization.toFixed(2) +
+        "%";
+
+
+    document.getElementById(
+        "dashboardProgress"
+    ).style.width =
+        Math.min(
+            Math.max(
+                utilization,
+                0
+            ),
+            100
+        ) + "%";
+
+}
+
+
+
+/* =====================================================
+   OPEN / CLOSE PANEL
+   ===================================================== */
+
+function toggleGADMonitoring() {
+
+
+    const panel =
+        document.getElementById(
+            "gadMonitoringPanel"
+        );
+
+
+    if (
+        panel.style.display ===
+        "none"
+
+        ||
+
+        panel.style.display ===
+        ""
+    ) {
+
+
+        panel.style.display =
+            "block";
+
+
+        renderGADPrograms();
+
+
+        updateGADDashboard();
+
+
+        setTimeout(
+            function() {
+
+                panel.scrollIntoView({
+
+                    behavior:
+                        "smooth",
+
+                    block:
+                        "start"
+
+                });
+
+            },
+            100
+        );
+
+
+    }
+
+    else {
+
+        panel.style.display =
+            "none";
+
+    }
+
+}
+
+
+
+/* =====================================================
+   SEARCH PROGRAM
+   ===================================================== */
+
+document.getElementById(
+    "gadSearch"
+).addEventListener(
+    "input",
+    function() {
+
+
+        const search =
+            this.value
+                .toLowerCase()
+                .trim();
+
+
+        const rows =
+            document.querySelectorAll(
+                "#gadProgramTable tr"
+            );
+
+
+        rows.forEach(
+            function(row) {
+
+
+                const text =
+                    row.dataset.search ||
+                    "";
+
+
+                if (
+                    text.includes(
+                        search
+                    )
+                ) {
+
+                    row.style.display =
+                        "";
+
+                }
+
+                else {
+
+                    row.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
+
+/* =====================================================
+   DATE AND TIME
+   ===================================================== */
+
+function updateDateTime() {
+
+
+    const now =
+        new Date();
+
+
+    const options = {
+
+        weekday:
+            "long",
+
+        year:
+            "numeric",
+
+        month:
+            "long",
+
+        day:
+            "numeric"
+
+    };
+
+
+    const date =
+        now.toLocaleDateString(
+            "en-US",
+            options
+        );
+
+
+    const time =
+        now.toLocaleTimeString(
+            "en-US"
+        );
+
+
+    document.getElementById(
+        "currentDateTime"
+    ).innerHTML =
+
+        "📅 " +
+        date +
+        " &nbsp;&nbsp; | &nbsp;&nbsp; 🕒 " +
+        time;
+
+}
+
+
+
+/* =====================================================
+   START SYSTEM
+   ===================================================== */
+
 updateDateTime();
 
-setInterval(updateDateTime,1000);
+
+setInterval(
+    updateDateTime,
+    1000
+);
+
+
+updateGADDashboard();
+
 
 </script>
 
+
 </body>
+
 </html>
-</body>
-</html>
+```
