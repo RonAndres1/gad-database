@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,7 @@
 <title>Gabaldon GAD Database</title>
 
 <link rel="stylesheet" href="style.css">
+
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -149,6 +151,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     justify-content:space-between;
     align-items:center;
     flex-wrap:wrap;
+    gap:15px;
     margin-bottom:20px;
 }
 
@@ -165,6 +168,42 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     padding:9px 15px;
     cursor:pointer;
     font-weight:bold;
+}
+
+
+/* ================================
+   ADMIN BUTTONS
+================================ */
+
+.admin-controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-left:auto;
+}
+
+.admin-btn{
+    border:none;
+    background:#6a1b9a;
+    color:white;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.2s;
+}
+
+.admin-btn:hover{
+    background:#4a126c;
+    transform:translateY(-1px);
+}
+
+.logout-btn{
+    background:#c62828;
+}
+
+.logout-btn:hover{
+    background:#991f1f;
 }
 
 
@@ -263,15 +302,21 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 .used-input{
     width:130px;
     padding:8px;
-    border:1px solid #bbb;
+    border:2px solid #6a1b9a;
     border-radius:7px;
     text-align:right;
     font-size:14px;
+    background:#fffde7;
 }
 
 .used-input:focus{
     outline:2px solid #8e24aa;
     border-color:#8e24aa;
+}
+
+.used-display{
+    font-weight:bold;
+    white-space:nowrap;
 }
 
 
@@ -326,6 +371,20 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
 .status-over{
     color:#c62828;
+}
+
+
+/* ================================
+   NOTICE
+================================ */
+
+.gad-edit-notice{
+    display:block;
+    margin-top:15px;
+    padding:12px 15px;
+    background:#f8f4fa;
+    border-left:4px solid #6a1b9a;
+    border-radius:7px;
 }
 
 
@@ -391,6 +450,16 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     .gad-card-details{
         grid-template-columns:1fr;
     }
+
+    .admin-controls{
+        width:100%;
+        margin-left:0;
+    }
+
+    .admin-btn{
+        flex:1;
+    }
+
 }
 
 @media(max-width:550px){
@@ -406,6 +475,15 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     .gad-percent{
         font-size:34px;
     }
+
+    .admin-controls{
+        flex-direction:column;
+    }
+
+    .admin-btn{
+        width:100%;
+    }
+
 }
 
 </style>
@@ -712,15 +790,36 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
         </div>
 
 
-        <button
-            class="close-gad"
-            onclick="toggleGADMonitoring()"
-        >
+        <!-- ADMIN CONTROLS -->
 
-            <i class="bi bi-x-circle"></i>
-            Close
+        <div class="admin-controls">
 
-        </button>
+            <button
+                id="adminLoginBtn"
+                class="admin-btn"
+                onclick="adminLogin(event)"
+            >
+                🔐 Admin Login
+            </button>
+
+            <button
+                id="adminLogoutBtn"
+                class="admin-btn logout-btn"
+                onclick="adminLogout(event)"
+                style="display:none;"
+            >
+                🔓 Logout
+            </button>
+
+            <button
+                class="close-gad"
+                onclick="toggleGADMonitoring()"
+            >
+                <i class="bi bi-x-circle"></i>
+                Close
+            </button>
+
+        </div>
 
     </div>
 
@@ -859,14 +958,13 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     </div>
 
 
-    <br>
+    <small
+        id="gadEditNotice"
+        class="gad-edit-notice"
+    >
 
-    <small>
-
-        💡 Enter the actual amount utilized in the
-        <b>Amount Used</b> column.
-        The Remaining Balance and Utilization Percentage
-        will automatically update.
+        👁️ <b>View Only Mode:</b>
+        Only authorized administrators can edit the Amount Used.
 
     </small>
 
@@ -905,14 +1003,26 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
 /* =================================================
    OFFICIAL TOTAL
-   FROM NEW UPLOADED FILE
 ================================================= */
 
 const TOTAL_GAD_BUDGET = 15340207.84;
 
 
 /* =================================================
-   PROGRAMS FROM SHEET2
+   ADMIN PASSWORD
+================================================= */
+
+/*
+   PALITAN MO ITO KUNG GUSTO MO NG SARILI MONG PASSWORD.
+*/
+
+const ADMIN_PASSWORD = "RON@ADMIN01";
+
+let isAdmin = false;
+
+
+/* =================================================
+   PROGRAMS
 ================================================= */
 
 const gadPrograms = [
@@ -1531,14 +1641,26 @@ function renderGADPrograms(){
 
             <td class="money">
 
-                <input
-                    type="number"
-                    class="used-input"
-                    min="0"
-                    step="0.01"
-                    value="${used}"
-                    data-index="${index}"
-                >
+                ${
+                    isAdmin
+                    ?
+                    `
+                    <input
+                        type="number"
+                        class="used-input"
+                        min="0"
+                        step="0.01"
+                        value="${used}"
+                        data-index="${index}"
+                    >
+                    `
+                    :
+                    `
+                    <span class="used-display">
+                        ${peso(used)}
+                    </span>
+                    `
+                }
 
             </td>
 
@@ -1709,6 +1831,11 @@ document.addEventListener(
 "input",
 function(event){
 
+    if(!isAdmin){
+        return;
+    }
+
+
     if(
         !event.target.classList.contains(
             "used-input"
@@ -1753,6 +1880,116 @@ function(event){
     updateDashboard();
 
 });
+
+
+/* =================================================
+   ADMIN LOGIN
+================================================= */
+
+function adminLogin(event){
+
+    if(event){
+        event.stopPropagation();
+    }
+
+
+    const password =
+    prompt(
+        "🔐 ADMIN LOGIN\n\nEnter Admin Password:"
+    );
+
+
+    if(password === null){
+        return;
+    }
+
+
+    if(password === ADMIN_PASSWORD){
+
+        isAdmin = true;
+
+
+        document.getElementById(
+            "adminLoginBtn"
+        ).style.display =
+        "none";
+
+
+        document.getElementById(
+            "adminLogoutBtn"
+        ).style.display =
+        "inline-block";
+
+
+        document.getElementById(
+            "gadEditNotice"
+        ).innerHTML =
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit the Amount Used.";
+
+
+        renderGADPrograms();
+
+        updateDashboard();
+
+
+        alert(
+            "✅ Admin Mode Activated!\n\nYou can now edit the Amount Used."
+        );
+
+    }
+    else{
+
+        alert(
+            "❌ Incorrect Password!\n\nAccess Denied."
+        );
+
+    }
+
+}
+
+
+/* =================================================
+   ADMIN LOGOUT
+================================================= */
+
+function adminLogout(event){
+
+    if(event){
+        event.stopPropagation();
+    }
+
+
+    isAdmin = false;
+
+
+    document.getElementById(
+        "adminLoginBtn"
+    ).style.display =
+    "inline-block";
+
+
+    document.getElementById(
+        "adminLogoutBtn"
+    ).style.display =
+    "none";
+
+
+    document.getElementById(
+        "gadEditNotice"
+    ).innerHTML =
+    "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
+
+
+    renderGADPrograms();
+
+    updateDashboard();
+
+
+    alert(
+        "🔒 Admin Mode Disabled!\n\nThe page is now View Only."
+    );
+
+}
 
 
 /* =================================================
@@ -2032,10 +2269,12 @@ function updateDateTime(){
 
 updateDateTime();
 
+
 setInterval(
     updateDateTime,
     1000
 );
+
 
 updateDashboard();
 
@@ -2043,3 +2282,4 @@ updateDashboard();
 
 </body>
 </html>
+```
