@@ -1424,39 +1424,46 @@ const gadPrograms = [
 
 
 /* =================================================
-   LOCAL STORAGE
+   FIRESTORE DATABASE
 ================================================= */
 
-const STORAGE_KEY =
-"GABALDON_GAD_USED_2026";
+let usedData = {};
 
+async function loadUsedData(){
 
-function getUsedData(){
+    const ref = doc(db, "BudgetMonitoring", "FY2026");
 
-    try{
+    const snap = await getDoc(ref);
 
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || {};
+    if(snap.exists()){
 
-    }catch(error){
+        usedData = snap.data().used || {};
 
-        return {};
+    }else{
+
+        usedData = {};
 
     }
 
 }
 
 
-function saveUsedData(data){
+async function saveUsedData(){
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data)
-    );
+    const ref = doc(db, "BudgetMonitoring", "FY2026");
+
+    await setDoc(ref,{
+        used:usedData
+    });
 
 }
 
+
+function getUsedData(){
+
+    return usedData;
+
+}
 
 /* =================================================
    FORMAT PESO
@@ -1512,7 +1519,9 @@ function getProgramBudget(program){
    RENDER
 ================================================= */
 
-function renderGADPrograms(){
+async function renderGADPrograms(){
+
+    await loadUsedData();
 
     const table =
     document.getElementById(
@@ -1830,7 +1839,7 @@ function updateRow(
 
 document.addEventListener(
 "input",
-function(event){
+async function(event){
 
     if(!isAdmin){
         return;
@@ -1858,14 +1867,9 @@ function(event){
     Number(input.value || 0);
 
 
-    const data =
-    getUsedData();
+    usedData[index] = used;
 
-    data[index] =
-    used;
-
-    saveUsedData(data);
-
+await saveUsedData();
 
     const row =
     input.closest("tr");
@@ -1997,7 +2001,9 @@ function adminLogout(event){
    DASHBOARD
 ================================================= */
 
-function updateDashboard(){
+async function updateDashboard(){
+
+    await loadUsedData();
 
     const saved =
     getUsedData();
@@ -2268,18 +2274,22 @@ function updateDateTime(){
    START
 ================================================= */
 
-updateDateTime();
+(async()=>{
 
+    updateDateTime();
 
-setInterval(
-    updateDateTime,
-    1000
-);
+    setInterval(
+        updateDateTime,
+        1000
+    );
 
+    await renderGADPrograms();
 
-updateDashboard();
+    await updateDashboard();
 
-</script>
+})();
+
+<script type="module">
 
 </body>
 </html>
