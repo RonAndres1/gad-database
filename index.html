@@ -999,6 +999,41 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 </div>
 
 
+
+<!-- =================================================
+     FIREBASE
+================================================= -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyCdbBvuLHoJyQyOkZbD2zwoxeqIdYBC--Q",
+    authDomain: "gad-database-94d42.firebaseapp.com",
+    databaseURL: "https://gad-database-94d42-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "gad-database-94d42",
+    storageBucket: "gad-database-94d42.firebasestorage.app",
+    messagingSenderId: "547586757653",
+    appId: "1:547586757653:web:a51871ca9f8817e2516a1c"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const firebaseAuth = firebase.auth();
+const firebaseDatabase = firebase.database();
+
+/*
+ * IMPORTANT:
+ * Palitan ito ng EXACT EMAIL na gagamitin mo sa Firebase Authentication.
+ */
+const ADMIN_EMAIL = "YOUR-ADMIN-EMAIL@example.com";
+
+let firebaseUsedData = {};
+let firebaseReady = false;
+let firebaseListenerStarted = false;
+</script>
+
 <script>
 
 
@@ -1010,14 +1045,8 @@ const TOTAL_GAD_BUDGET = 15340207.84;
 
 
 /* =================================================
-   ADMIN PASSWORD
+   ADMIN AUTHENTICATION
 ================================================= */
-
-/*
-   PALITAN MO ITO KUNG GUSTO MO NG SARILI MONG PASSWORD.
-*/
-
-const ADMIN_PASSWORD = "RON@ADMIN01";
 
 let isAdmin = false;
 
@@ -1424,39 +1453,61 @@ const gadPrograms = [
 
 
 /* =================================================
-   LOCAL STORAGE
+   FIREBASE DATABASE
 ================================================= */
 
-const STORAGE_KEY =
-"GABALDON_GAD_USED_2026";
+/*
+ * Amount Used is now stored in Firebase Realtime Database.
+ * Path:
+ *   gadBudget/used
+ */
 
+const GAD_USED_PATH = "gadBudget/used";
 
 function getUsedData(){
+    return firebaseUsedData || {};
+}
 
-    try{
+async function saveUsedData(data){
+    await firebaseDatabase.ref(GAD_USED_PATH).set(data);
+}
 
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || {};
+function startFirebaseListener(){
 
-    }catch(error){
-
-        return {};
-
+    if(firebaseListenerStarted){
+        return;
     }
 
-}
+    firebaseListenerStarted = true;
 
+    firebaseDatabase.ref(GAD_USED_PATH).on(
+        "value",
+        function(snapshot){
 
-function saveUsedData(data){
+            firebaseUsedData = snapshot.val() || {};
+            firebaseReady = true;
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data)
+            renderGADPrograms();
+            updateDashboard();
+
+        },
+        function(error){
+
+            console.error("Firebase read error:", error);
+
+            firebaseReady = true;
+
+            renderGADPrograms();
+            updateDashboard();
+
+            alert(
+                "⚠️ Hindi mabasa ang GAD data mula sa Firebase.\n\n" +
+                "I-check ang Realtime Database Rules at internet connection."
+            );
+
+        }
     );
-
 }
-
 
 /* =================================================
    FORMAT PESO
@@ -1858,14 +1909,12 @@ function(event){
     Number(input.value || 0);
 
 
-    const data =
-    getUsedData();
+    const data = {
+        ...getUsedData(),
+        [index]: used
+    };
 
-    data[index] =
-    used;
-
-    saveUsedData(data);
-
+    firebaseUsedData = data;
 
     const row =
     input.closest("tr");
@@ -1880,6 +1929,20 @@ function(event){
 
     updateDashboard();
 
+    saveUsedData(data).catch(function(error){
+
+        console.error("Firebase save error:", error);
+
+        alert(
+            "❌ Hindi na-save sa Firebase ang pagbabago.\n\n" +
+            "I-check ang Admin Authentication at Realtime Database Rules."
+        );
+
+        renderGADPrograms();
+        updateDashboard();
+
+    });
+
 });
 
 
@@ -1887,62 +1950,113 @@ function(event){
    ADMIN LOGIN
 ================================================= */
 
-function adminLogin(event){
+async function adminLogin(event){
 
     if(event){
         event.stopPropagation();
     }
 
-
-    const password =
-    prompt(
-        "🔐 ADMIN LOGIN\n\nEnter Admin Password:"
+    const email = prompt(
+        "🔐 ADMIN LOGIN\n\nEnter Admin Email:"
     );
 
+    if(email === null){
+        return;
+    }
+
+    const password = prompt(
+        "🔐 ADMIN LOGIN\n\nEnter Admin Password:"
+    );
 
     if(password === null){
         return;
     }
 
+    if(
+        ADMIN_EMAIL === "YOUR-ADMIN-EMAIL@example.com" ||
+        !ADMIN_EMAIL
+    ){
 
-    if(password === ADMIN_PASSWORD){
+        alert(
+            "⚠️ Hindi pa naka-set ang Admin Email.\n\n" +
+            "Buksan ang index.html at palitan ang ADMIN_EMAIL " +
+            "ng email na ginawa mo sa Firebase Authentication."
+        );
+
+        return;
+    }
+
+    if(
+        email.trim().toLowerCase() !==
+        ADMIN_EMAIL.trim().toLowerCase()
+    ){
+
+        alert(
+            "❌ This email is not authorized as Admin."
+        );
+
+        return;
+    }
+
+    try{
+
+        await firebaseAuth.signInWithEmailAndPassword(
+            email.trim(),
+            password
+        );
 
         isAdmin = true;
-
 
         document.getElementById(
             "adminLoginBtn"
         ).style.display =
         "none";
 
-
         document.getElementById(
             "adminLogoutBtn"
         ).style.display =
         "inline-block";
-
 
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
         "✏️ <b>ADMIN EDIT MODE:</b> You can now edit the Amount Used.";
 
-
         renderGADPrograms();
-
         updateDashboard();
 
-
         alert(
-            "✅ Admin Mode Activated!\n\nYou can now edit the Amount Used."
+            "✅ Admin Mode Activated!\n\n" +
+            "You can now edit the Amount Used."
         );
 
     }
-    else{
+    catch(error){
 
-        alert(
-            "❌ Incorrect Password!\n\nAccess Denied."
-        );
+        console.error("Firebase login error:", error);
+
+        let message =
+            "❌ Login failed.";
+
+        if(error.code === "auth/invalid-credential"){
+            message =
+                "❌ Incorrect email or password.";
+        }
+        else if(error.code === "auth/user-not-found"){
+            message =
+                "❌ Admin account not found.\n\n" +
+                "Create the account first in Firebase Authentication.";
+        }
+        else if(error.code === "auth/wrong-password"){
+            message =
+                "❌ Incorrect password.";
+        }
+        else if(error.code === "auth/too-many-requests"){
+            message =
+                "⚠️ Too many login attempts. Please try again later.";
+        }
+
+        alert(message);
 
     }
 
@@ -1953,42 +2067,51 @@ function adminLogin(event){
    ADMIN LOGOUT
 ================================================= */
 
-function adminLogout(event){
+async function adminLogout(event){
 
     if(event){
         event.stopPropagation();
     }
 
+    try{
 
-    isAdmin = false;
+        await firebaseAuth.signOut();
 
+        isAdmin = false;
 
-    document.getElementById(
-        "adminLoginBtn"
-    ).style.display =
-    "inline-block";
+        document.getElementById(
+            "adminLoginBtn"
+        ).style.display =
+        "inline-block";
 
+        document.getElementById(
+            "adminLogoutBtn"
+        ).style.display =
+        "none";
 
-    document.getElementById(
-        "adminLogoutBtn"
-    ).style.display =
-    "none";
+        document.getElementById(
+            "gadEditNotice"
+        ).innerHTML =
+        "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
 
+        renderGADPrograms();
+        updateDashboard();
 
-    document.getElementById(
-        "gadEditNotice"
-    ).innerHTML =
-    "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
+        alert(
+            "🔒 Admin Mode Disabled!\n\n" +
+            "The page is now View Only."
+        );
 
+    }
+    catch(error){
 
-    renderGADPrograms();
+        console.error("Firebase logout error:", error);
 
-    updateDashboard();
+        alert(
+            "⚠️ Unable to log out. Please try again."
+        );
 
-
-    alert(
-        "🔒 Admin Mode Disabled!\n\nThe page is now View Only."
-    );
+    }
 
 }
 
@@ -2265,8 +2388,68 @@ function updateDateTime(){
 
 
 /* =================================================
+   FIREBASE AUTH STATE
+================================================= */
+
+firebaseAuth.onAuthStateChanged(function(user){
+
+    if(
+        user &&
+        ADMIN_EMAIL !== "YOUR-ADMIN-EMAIL@example.com" &&
+        user.email &&
+        user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+    ){
+
+        isAdmin = true;
+
+        document.getElementById(
+            "adminLoginBtn"
+        ).style.display =
+        "none";
+
+        document.getElementById(
+            "adminLogoutBtn"
+        ).style.display =
+        "inline-block";
+
+        document.getElementById(
+            "gadEditNotice"
+        ).innerHTML =
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit the Amount Used.";
+
+    }
+    else{
+
+        isAdmin = false;
+
+        document.getElementById(
+            "adminLoginBtn"
+        ).style.display =
+        "inline-block";
+
+        document.getElementById(
+            "adminLogoutBtn"
+        ).style.display =
+        "none";
+
+        document.getElementById(
+            "gadEditNotice"
+        ).innerHTML =
+        "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
+
+    }
+
+    renderGADPrograms();
+    updateDashboard();
+
+});
+
+
+/* =================================================
    START
 ================================================= */
+
+startFirebaseListener();
 
 updateDateTime();
 
