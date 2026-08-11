@@ -1487,8 +1487,15 @@ function startFirebaseListener(){
             firebaseUsedData = snapshot.val() || {};
             firebaseReady = true;
 
+            const savedScrollY = window.scrollY;
+            const savedScrollX = window.scrollX;
+
             renderGADPrograms();
             updateDashboard();
+
+            requestAnimationFrame(function(){
+                window.scrollTo(savedScrollX, savedScrollY);
+            });
 
         },
         function(error){
@@ -1879,6 +1886,9 @@ function updateRow(
    INPUT
 ================================================= */
 
+// Update the row while typing, but DO NOT save to Firebase on every keystroke.
+// Saving on every keypress causes the Firebase listener to rebuild the table,
+// which makes the page jump back to the top while the user is typing.
 document.addEventListener(
 "input",
 function(event){
@@ -1887,27 +1897,36 @@ function(event){
         return;
     }
 
-
-    if(
-        !event.target.classList.contains(
-            "used-input"
-        )
-    ){
-
+    if(!event.target.classList.contains("used-input")){
         return;
-
     }
 
+    const input = event.target;
+    const index = Number(input.dataset.index);
+    const used = Number(input.value || 0);
+    const row = input.closest("tr");
 
-    const input =
-    event.target;
+    // Keep the current value immediately visible without rebuilding the table.
+    updateRow(row, index, used);
+    updateDashboard();
+});
 
-    const index =
-    Number(input.dataset.index);
+// Save only after the user finishes editing the field (blur/change).
+document.addEventListener(
+"change",
+function(event){
 
-    const used =
-    Number(input.value || 0);
+    if(!isAdmin){
+        return;
+    }
 
+    if(!event.target.classList.contains("used-input")){
+        return;
+    }
+
+    const input = event.target;
+    const index = Number(input.dataset.index);
+    const used = Number(input.value || 0);
 
     const data = {
         ...getUsedData(),
@@ -1916,18 +1935,10 @@ function(event){
 
     firebaseUsedData = data;
 
-    const row =
-    input.closest("tr");
-
-
-    updateRow(
-        row,
-        index,
-        used
-    );
-
-
-    updateDashboard();
+    // Remember the current page position so the Firebase refresh does not
+    // send the user back to the top of the page.
+    const savedScrollY = window.scrollY;
+    const savedScrollX = window.scrollX;
 
     saveUsedData(data).catch(function(error){
 
@@ -1941,7 +1952,26 @@ function(event){
         renderGADPrograms();
         updateDashboard();
 
+        requestAnimationFrame(function(){
+            window.scrollTo(savedScrollX, savedScrollY);
+        });
+
     });
+
+});
+
+// Pressing Enter finishes the current edit without submitting/reloading.
+document.addEventListener(
+"keydown",
+function(event){
+
+    if(
+        event.key === "Enter" &&
+        event.target.classList.contains("used-input")
+    ){
+        event.preventDefault();
+        event.target.blur();
+    }
 
 });
 
