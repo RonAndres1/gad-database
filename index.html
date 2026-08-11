@@ -1472,6 +1472,45 @@ async function saveUsedData(data){
     await firebaseDatabase.ref(GAD_USED_PATH).set(data);
 }
 
+function updateRenderedGADRows(){
+
+    const rows =
+        document.querySelectorAll("#gadProgramTable tr[data-index]");
+
+    rows.forEach(function(row){
+
+        const index =
+            Number(row.dataset.index);
+
+        const used =
+            Number(firebaseUsedData[index] || 0);
+
+        const input =
+            row.querySelector(".used-input");
+
+        // IMPORTANT:
+        // Never replace the currently focused input.
+        // This prevents Firebase's real-time listener from
+        // rebuilding the table while the administrator is typing.
+        if(input && document.activeElement !== input){
+            input.value = used;
+        }
+
+        const display =
+            row.querySelector(".used-display");
+
+        if(display){
+            display.textContent = peso(used);
+        }
+
+        updateRow(row, index, used);
+
+    });
+
+    updateDashboard();
+}
+
+
 function startFirebaseListener(){
 
     if(firebaseListenerStarted){
@@ -1484,18 +1523,15 @@ function startFirebaseListener(){
         "value",
         function(snapshot){
 
-            firebaseUsedData = snapshot.val() || {};
+            firebaseUsedData =
+                snapshot.val() || {};
+
             firebaseReady = true;
 
-            const savedScrollY = window.scrollY;
-            const savedScrollX = window.scrollX;
-
-            renderGADPrograms();
-            updateDashboard();
-
-            requestAnimationFrame(function(){
-                window.scrollTo(savedScrollX, savedScrollY);
-            });
+            // DO NOT call renderGADPrograms() here.
+            // Rendering the whole table destroys the focused input
+            // and causes the page/scroll position to jump.
+            updateRenderedGADRows();
 
         },
         function(error){
@@ -1504,7 +1540,6 @@ function startFirebaseListener(){
 
             firebaseReady = true;
 
-            renderGADPrograms();
             updateDashboard();
 
             alert(
@@ -1654,6 +1689,8 @@ function renderGADPrograms(){
         const row =
         document.createElement("tr");
 
+
+        row.dataset.index = index;
 
         row.dataset.search =
         (
@@ -1886,6 +1923,13 @@ function updateRow(
    INPUT
 ================================================= */
 
+/*
+ * IMPORTANT SCROLL FIX:
+ * Firebase realtime updates never rebuild the GAD table.
+ * The table is rendered only when needed (initial/auth state).
+ * Amount Used edits update the existing row in-place.
+ */
+
 // Update the row while typing, but DO NOT save to Firebase on every keystroke.
 // Saving on every keypress causes the Firebase listener to rebuild the table,
 // which makes the page jump back to the top while the user is typing.
@@ -1954,6 +1998,9 @@ function(event){
 
         requestAnimationFrame(function(){
             window.scrollTo(savedScrollX, savedScrollY);
+            requestAnimationFrame(function(){
+                window.scrollTo(savedScrollX, savedScrollY);
+            });
         });
 
     });
