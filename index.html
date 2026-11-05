@@ -1112,9 +1112,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
             <small>Total MOOE</small>
 
-            <strong>
-                ₱14,382,500.00
-            </strong>
+            <strong id="summaryMOOE">₱14,382,500.00</strong>
 
         </div>
 
@@ -1123,9 +1121,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
             <small>Total PS</small>
 
-            <strong>
-                ₱957,707.84
-            </strong>
+            <strong id="summaryPS">₱957,707.84</strong>
 
         </div>
 
@@ -1134,9 +1130,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
             <small>Total CO</small>
 
-            <strong>
-                ₱0.00
-            </strong>
+            <strong id="summaryCO">₱0.00</strong>
 
         </div>
 
@@ -1145,9 +1139,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
             <small>Total GAD Budget</small>
 
-            <strong>
-                ₱15,340,207.84
-            </strong>
+            <strong id="summaryTotalBudget">₱15,340,207.84</strong>
 
         </div>
 
@@ -1232,7 +1224,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     >
 
         👁️ <b>View Only Mode:</b>
-        Only authorized administrators can edit the Amount Used.
+        PS, MOOE, CO, and Amount Used can only be edited by authorized administrators.
 
     </small>
 
@@ -1308,7 +1300,7 @@ let firebaseListenerStarted = false;
    OFFICIAL TOTAL
 ================================================= */
 
-const TOTAL_GAD_BUDGET = 15340207.84;
+// Initial reference amount only. Dashboard totals are computed from PS + MOOE + CO per program.
 
 
 /* =================================================
@@ -1730,6 +1722,8 @@ const gadPrograms = [
  */
 
 const GAD_USED_PATH = "gadBudget/used";
+const GAD_PROGRAM_BUDGET_PATH = "gadBudget/programBudgets";
+let firebaseBudgetListenerStarted = false;
 
 function getUsedData(){
     return firebaseUsedData || {};
@@ -1737,6 +1731,77 @@ function getUsedData(){
 
 async function saveUsedData(data){
     await firebaseDatabase.ref(GAD_USED_PATH).set(data);
+}
+
+function getTotalProgramBudget(){
+    return gadPrograms.reduce(function(total, program){
+        return total + getProgramBudget(program);
+    }, 0);
+}
+
+function getBudgetTotals(){
+    return gadPrograms.reduce(function(totals, program){
+        totals.ps += Number(program.ps || 0);
+        totals.mooe += Number(program.mooe || 0);
+        totals.co += Number(program.co || 0);
+        return totals;
+    }, {ps:0, mooe:0, co:0});
+}
+
+async function saveProgramBudgets(){
+    const data = {};
+    gadPrograms.forEach(function(program, index){
+        data[index] = {
+            ps: Number(program.ps || 0),
+            mooe: Number(program.mooe || 0),
+            co: Number(program.co || 0)
+        };
+    });
+    await firebaseDatabase.ref(GAD_PROGRAM_BUDGET_PATH).set(data);
+}
+
+function applySavedProgramBudgets(data){
+    if(!data) return;
+    Object.keys(data).forEach(function(key){
+        const index = Number(key);
+        const saved = data[key];
+        if(!Number.isInteger(index) || !gadPrograms[index] || !saved) return;
+        ["ps", "mooe", "co"].forEach(function(field){
+            if(saved[field] !== undefined && Number.isFinite(Number(saved[field]))){
+                gadPrograms[index][field] = Number(saved[field]);
+            }
+        });
+    });
+}
+
+function updateBudgetSummary(){
+    const totals = getBudgetTotals();
+    const total = totals.ps + totals.mooe + totals.co;
+    const setText = function(id, value){
+        const element = document.getElementById(id);
+        if(element) element.textContent = peso(value);
+    };
+    setText("summaryPS", totals.ps);
+    setText("summaryMOOE", totals.mooe);
+    setText("summaryCO", totals.co);
+    setText("summaryTotalBudget", total);
+}
+
+function startProgramBudgetListener(){
+    if(firebaseBudgetListenerStarted) return;
+    firebaseBudgetListenerStarted = true;
+
+    firebaseDatabase.ref(GAD_PROGRAM_BUDGET_PATH).on("value", function(snapshot){
+        applySavedProgramBudgets(snapshot.val() || {});
+        updateBudgetSummary();
+        if(document.getElementById("gadMonitoringPanel").style.display !== "none"){
+            renderGADPrograms();
+        }
+        updateDashboard();
+    }, function(error){
+        console.error("Firebase budget read error:", error);
+        alert("⚠️ Hindi mabasa ang program budgets mula sa Firebase. I-check ang Realtime Database Rules at internet connection.");
+    });
 }
 
 function updateRenderedGADRows(){
@@ -1987,19 +2052,31 @@ function renderGADPrograms(){
             </td>
 
             <td class="money">
-                ${peso(program.ps)}
+                ${
+                    isAdmin
+                    ? `<input type="number" class="budget-input" data-field="ps" data-index="${index}" min="0" step="0.01" value="${Number(program.ps || 0)}" aria-label="PS for ${escapeHTML(program.program)}">`
+                    : peso(program.ps)
+                }
             </td>
 
             <td class="money">
-                ${peso(program.mooe)}
+                ${
+                    isAdmin
+                    ? `<input type="number" class="budget-input" data-field="mooe" data-index="${index}" min="0" step="0.01" value="${Number(program.mooe || 0)}" aria-label="MOOE for ${escapeHTML(program.program)}">`
+                    : peso(program.mooe)
+                }
             </td>
 
             <td class="money">
-                ${peso(program.co)}
+                ${
+                    isAdmin
+                    ? `<input type="number" class="budget-input" data-field="co" data-index="${index}" min="0" step="0.01" value="${Number(program.co || 0)}" aria-label="CO for ${escapeHTML(program.program)}">`
+                    : peso(program.co)
+                }
             </td>
 
             <td class="money">
-                ${peso(budget)}
+                <span class="program-budget-value">${peso(budget)}</span>
             </td>
 
             <td class="money">
@@ -2073,6 +2150,8 @@ function renderGADPrograms(){
     ).textContent =
     gadPrograms.length;
 
+    updateBudgetSummary();
+    updateDashboard();
 
     setupFloatingScrollbar();
 
@@ -2196,6 +2275,53 @@ function updateRow(
  * The table is rendered only when needed (initial/auth state).
  * Amount Used edits update the existing row in-place.
  */
+
+// PS, MOOE, and CO are editable only in authenticated Admin Mode.
+// Recalculate the program total immediately; save to Firebase when editing is finished.
+document.addEventListener("input", function(event){
+    const input = event.target;
+    if(!input.classList.contains("budget-input")) return;
+    if(!isAdmin) return;
+
+    const index = Number(input.dataset.index);
+    const field = input.dataset.field;
+    if(!gadPrograms[index] || !["ps", "mooe", "co"].includes(field)) return;
+
+    gadPrograms[index][field] = Number(input.value || 0);
+    const row = input.closest("tr");
+    const budget = getProgramBudget(gadPrograms[index]);
+    row.querySelector(".program-budget-value").textContent = peso(budget);
+
+    const used = Number(getUsedData()[index] || 0);
+    updateRow(row, index, used);
+    updateBudgetSummary();
+    updateDashboard();
+});
+
+document.addEventListener("change", function(event){
+    const input = event.target;
+    if(!input.classList.contains("budget-input")) return;
+    if(!isAdmin) return;
+
+    const index = Number(input.dataset.index);
+    const field = input.dataset.field;
+    if(!gadPrograms[index] || !["ps", "mooe", "co"].includes(field)) return;
+
+    const value = Math.max(0, Number(input.value || 0));
+    gadPrograms[index][field] = value;
+    input.value = value;
+
+    const row = input.closest("tr");
+    row.querySelector(".program-budget-value").textContent = peso(getProgramBudget(gadPrograms[index]));
+    updateRow(row, index, Number(getUsedData()[index] || 0));
+    updateBudgetSummary();
+    updateDashboard();
+
+    saveProgramBudgets().catch(function(error){
+        console.error("Firebase budget save error:", error);
+        alert("❌ Hindi na-save sa Firebase ang PS/MOOE/CO. I-check ang Admin Authentication at Realtime Database Rules.");
+    });
+});
 
 // Update the row while typing, but DO NOT save to Firebase on every keystroke.
 // Saving on every keypress causes the Firebase listener to rebuild the table,
@@ -2364,14 +2490,14 @@ async function adminLogin(event){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit the Amount Used.";
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit PS, MOOE, CO, and Amount Used.";
 
         renderGADPrograms();
         updateDashboard();
 
         alert(
             "✅ Admin Mode Activated!\n\n" +
-            "You can now edit the Amount Used."
+            "You can now edit PS, MOOE, CO, and Amount Used."
         );
 
     }
@@ -2436,7 +2562,7 @@ async function adminLogout(event){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
+        "👁️ <b>View Only Mode:</b> PS, MOOE, CO, and Amount Used can only be edited by authorized administrators.";
 
         renderGADPrograms();
         updateDashboard();
@@ -2483,22 +2609,19 @@ function updateDashboard(){
     });
 
 
-    const remaining =
-    TOTAL_GAD_BUDGET -
-    totalUsed;
-
+    const totalBudget = getTotalProgramBudget();
+    const remaining = totalBudget - totalUsed;
 
     const percentage =
-    (
-        totalUsed /
-        TOTAL_GAD_BUDGET
-    ) * 100;
+    totalBudget > 0
+    ? (totalUsed / totalBudget) * 100
+    : 0;
 
 
     document.getElementById(
         "dashboardTotalBudget"
     ).textContent =
-    peso(TOTAL_GAD_BUDGET);
+    peso(totalBudget);
 
 
     document.getElementById(
@@ -2810,7 +2933,7 @@ firebaseAuth.onAuthStateChanged(function(user){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit the Amount Used.";
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit PS, MOOE, CO, and Amount Used.";
 
     }
     else{
@@ -2830,7 +2953,7 @@ firebaseAuth.onAuthStateChanged(function(user){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "👁️ <b>View Only Mode:</b> Only authorized administrators can edit the Amount Used.";
+        "👁️ <b>View Only Mode:</b> PS, MOOE, CO, and Amount Used can only be edited by authorized administrators.";
 
     }
 
@@ -2845,6 +2968,7 @@ firebaseAuth.onAuthStateChanged(function(user){
 ================================================= */
 
 startFirebaseListener();
+startProgramBudgetListener();
 
 updateDateTime();
 
