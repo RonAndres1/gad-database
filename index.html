@@ -311,6 +311,19 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 }
 
 
+
+.gad-admin-table-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+.gad-tools-hint{font-size:12px;color:#666;}
+.gad-table .cell-input{width:100%;min-width:110px;box-sizing:border-box;padding:7px;border:1px solid #8e24aa;border-radius:6px;background:#fffde7;font:inherit;}
+.gad-table .program-name-input{min-width:260px;}
+.gad-table .office-input{min-width:140px;}
+.gad-table .custom-cell-input{min-width:110px;}
+.gad-table .row-action-btn,.gad-table .column-action-btn{border:0;border-radius:5px;padding:6px 8px;margin:2px;cursor:pointer;font-weight:600;}
+.gad-table .row-action-btn{background:#ffebee;color:#b71c1c;}
+.gad-table .column-action-btn{background:#f3e5f5;color:#6a1b9a;}
+.gad-table th .header-edit{display:inline-block;max-width:170px;white-space:normal;}
+@media print{.gad-admin-table-tools,.row-actions-column,.column-actions-column{display:none!important;}}
+
 /* ================================
    INPUT
 ================================ */
@@ -1179,51 +1192,14 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
         id="gadTableContainer"
     >
 
+        <div id="gadAdminTableTools" class="gad-admin-table-tools" style="display:none;">
+            <button type="button" class="admin-btn" onclick="addGADProgram(event)">＋ Add Program / Row</button>
+            <button type="button" class="admin-btn" onclick="addGADColumn(event)">＋ Add Column</button>
+            <span class="gad-tools-hint">Click a column name to rename it; use the row actions to edit or remove a program.</span>
+        </div>
+
         <table class="gad-table">
-
-            <thead>
-
-                <tr>
-
-                    <th>#</th>
-
-                    <th>
-                        Relevant LGU Program or Project
-                    </th>
-
-                    <th>
-                        Lead / Responsible Office
-                    </th>
-
-                    <th>PS</th>
-
-                    <th>MOOE</th>
-
-                    <th>CO</th>
-
-                    <th>
-                        Total Program Budget
-                    </th>
-
-                    <th>
-                        Amount Used
-                    </th>
-
-                    <th>
-                        Remaining
-                    </th>
-
-                    <th>
-                        Utilization
-                    </th>
-
-                    <th>
-                        Status
-                    </th>
-
-                </tr>
-
-            </thead>
+            <thead><tr id="gadProgramHeader"></tr></thead>
 
 
             <tbody id="gadProgramTable"></tbody>
@@ -1239,7 +1215,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     >
 
         👁️ <b>View Only Mode:</b>
-        PS, MOOE, CO, Total Program Budget, and Amount Used can only be edited by authorized administrators.
+        All program details, budget amounts, custom columns, and Amount Used can only be edited by authorized administrators.
 
     </small>
 
@@ -1328,6 +1304,8 @@ let isAdmin = false;
 /* =================================================
    PROGRAMS
 ================================================= */
+
+let gadCustomColumns = [];
 
 const gadPrograms = [
 
@@ -1738,7 +1716,40 @@ const gadPrograms = [
 
 const GAD_USED_PATH = "gadBudget/used";
 const GAD_PROGRAM_BUDGET_PATH = "gadBudget/programBudgets";
+const GAD_PROGRAMS_PATH = "gadBudget/programs";
+const GAD_COLUMNS_PATH = "gadBudget/customColumns";
 let firebaseBudgetListenerStarted = false;
+let firebaseStructureListenerStarted = false;
+
+async function saveGADStructure(){
+    await firebaseDatabase.ref(GAD_PROGRAMS_PATH).set(gadPrograms);
+    await firebaseDatabase.ref(GAD_COLUMNS_PATH).set(gadCustomColumns);
+    await saveProgramBudgets();
+}
+
+function startGADStructureListener(){
+    if(firebaseStructureListenerStarted) return;
+    firebaseStructureListenerStarted = true;
+    firebaseDatabase.ref(GAD_PROGRAMS_PATH).on("value", function(snapshot){
+        const savedPrograms = snapshot.val();
+        if(Array.isArray(savedPrograms) && savedPrograms.length){
+            gadPrograms.splice(0, gadPrograms.length, ...savedPrograms.map(function(item){
+                return Object.assign({program:"", office:"", ps:0, mooe:0, co:0, customValues:{}}, item || {});
+            }));
+            gadPrograms.forEach(function(program){ if(!program.customValues) program.customValues = {}; });
+            updateBudgetSummary();
+            if(document.getElementById("gadMonitoringPanel").style.display !== "none") renderGADPrograms();
+            updateDashboard();
+        }
+    }, function(error){ console.error("GAD programs read error:", error); });
+    firebaseDatabase.ref(GAD_COLUMNS_PATH).on("value", function(snapshot){
+        const savedColumns = snapshot.val();
+        if(Array.isArray(savedColumns)){
+            gadCustomColumns = savedColumns.filter(function(column){ return column && column.key && column.label; });
+            if(document.getElementById("gadMonitoringPanel").style.display !== "none") renderGADPrograms();
+        }
+    }, function(error){ console.error("GAD custom columns read error:", error); });
+}
 
 function getUsedData(){
     return firebaseUsedData || {};
@@ -1796,7 +1807,7 @@ function applySavedProgramBudgets(data){
 
 function updateBudgetSummary(){
     const totals = getBudgetTotals();
-    const total = totals.ps + totals.mooe + totals.co;
+    const total = getTotalProgramBudget();
     const setText = function(id, value){
         const element = document.getElementById(id);
         if(element) element.textContent = peso(value);
@@ -1962,229 +1973,132 @@ function getProgramBudget(program){
 ================================================= */
 
 function renderGADPrograms(){
-
-    const table =
-    document.getElementById(
-        "gadProgramTable"
-    );
-
-    const saved =
-    getUsedData();
-
+    const table = document.getElementById("gadProgramTable");
+    const header = document.getElementById("gadProgramHeader");
+    const saved = getUsedData();
+    const tools = document.getElementById("gadAdminTableTools");
+    if(tools) tools.style.display = isAdmin ? "flex" : "none";
     table.innerHTML = "";
 
+    const fixedHeaders = [
+        ["#", "number"], ["Relevant LGU Program or Project", "program"],
+        ["Lead / Responsible Office", "office"], ["PS", "ps"], ["MOOE", "mooe"],
+        ["CO", "co"], ["Total Program Budget", "totalProgramBudget"],
+        ["Amount Used", "used"], ["Remaining", "remaining"],
+        ["Utilization", "utilization"], ["Status", "status"]
+    ];
+    header.innerHTML = fixedHeaders.map(function(item){ return `<th>${escapeHTML(item[0])}</th>`; }).join("") +
+        gadCustomColumns.map(function(column, index){
+            return `<th><span class="header-edit">${escapeHTML(column.label)}</span>${isAdmin ? `<br><button class="column-action-btn" type="button" onclick="renameGADColumn('${column.key}',event)">Rename</button><button class="column-action-btn" type="button" onclick="removeGADColumn('${column.key}',event)">×</button>` : ""}</th>`;
+        }).join("") + (isAdmin ? '<th class="row-actions-column">Actions</th>' : "");
 
-    gadPrograms.forEach(
-    function(program,index){
+    gadPrograms.forEach(function(program,index){
+        const budget = getProgramBudget(program);
+        const used = Number(saved[index] || 0);
+        const remaining = budget - used;
+        const percentage = budget > 0 ? (used / budget) * 100 : 0;
+        const progress = Math.min(Math.max(percentage,0),100);
+        let status = "Not Started", statusClass = "status-none";
+        if(used > budget){ status = "Over Budget"; statusClass = "status-over"; }
+        else if(used === budget && budget > 0){ status = "Fully Utilized"; statusClass = "status-complete"; }
+        else if(used > 0){ status = "Ongoing"; statusClass = "status-ongoing"; }
 
-        const budget =
-        getProgramBudget(program);
-
-        const used =
-        Number(saved[index] || 0);
-
-        const remaining =
-        budget - used;
-
-        const percentage =
-        budget > 0
-        ?
-        (used / budget) * 100
-        :
-        0;
-
-        const progress =
-        Math.min(
-            Math.max(
-                percentage,
-                0
-            ),
-            100
-        );
-
-
-        let status =
-        "Not Started";
-
-        let statusClass =
-        "status-none";
-
-
-        if(used > budget){
-
-            status =
-            "Over Budget";
-
-            statusClass =
-            "status-over";
-
-        }
-        else if(
-            used === budget &&
-            budget > 0
-        ){
-
-            status =
-            "Fully Utilized";
-
-            statusClass =
-            "status-complete";
-
-        }
-        else if(used > 0){
-
-            status =
-            "Ongoing";
-
-            statusClass =
-            "status-ongoing";
-
-        }
-
-
-        const row =
-        document.createElement("tr");
-
-
+        const row = document.createElement("tr");
         row.dataset.index = index;
-
-        row.dataset.search =
-        (
-            program.program +
-            " " +
-            program.office
-        ).toLowerCase();
-
-
+        row.dataset.search = (String(program.program || "") + " " + String(program.office || "")).toLowerCase();
+        const editableText = function(field, value, className){
+            return isAdmin ? `<input class="cell-input ${className || ""}" type="text" data-edit-field="${field}" data-index="${index}" value="${escapeHTML(value || "")}" aria-label="${field}">` : escapeHTML(value || "Not Specified");
+        };
+        const moneyInput = function(field, value){
+            return isAdmin ? `<input type="number" class="budget-input" data-field="${field}" data-index="${index}" min="0" step="0.01" value="${Number(value || 0)}">` : peso(value || 0);
+        };
         row.innerHTML = `
-
-            <td>
-                ${index + 1}
-            </td>
-
-            <td>
-                <strong>
-                    ${escapeHTML(program.program)}
-                </strong>
-            </td>
-
-            <td>
-                ${escapeHTML(
-                    program.office ||
-                    "Not Specified"
-                )}
-            </td>
-
-            <td class="money">
-                ${
-                    isAdmin
-                    ? `<input type="number" class="budget-input" data-field="ps" data-index="${index}" min="0" step="0.01" value="${Number(program.ps || 0)}" aria-label="PS for ${escapeHTML(program.program)}">`
-                    : peso(program.ps)
-                }
-            </td>
-
-            <td class="money">
-                ${
-                    isAdmin
-                    ? `<input type="number" class="budget-input" data-field="mooe" data-index="${index}" min="0" step="0.01" value="${Number(program.mooe || 0)}" aria-label="MOOE for ${escapeHTML(program.program)}">`
-                    : peso(program.mooe)
-                }
-            </td>
-
-            <td class="money">
-                ${
-                    isAdmin
-                    ? `<input type="number" class="budget-input" data-field="co" data-index="${index}" min="0" step="0.01" value="${Number(program.co || 0)}" aria-label="CO for ${escapeHTML(program.program)}">`
-                    : peso(program.co)
-                }
-            </td>
-
-            <td class="money">
-                ${
-                    isAdmin
-                    ? `<input type="number" class="budget-input total-budget-input" data-field="totalProgramBudget" data-index="${index}" min="0" step="0.01" value="${budget}" aria-label="Total Program Budget for ${escapeHTML(program.program)}">`
-                    : `<span class="program-budget-value">${peso(budget)}</span>`
-                }
-            </td>
-
-            <td class="money">
-
-                ${
-                    isAdmin
-                    ?
-                    `
-                    <input
-                        type="number"
-                        class="used-input"
-                        min="0"
-                        step="0.01"
-                        value="${used}"
-                        data-index="${index}"
-                    >
-                    `
-                    :
-                    `
-                    <span class="used-display">
-                        ${peso(used)}
-                    </span>
-                    `
-                }
-
-            </td>
-
-            <td class="money">
-
-                <span class="remaining-value">
-                    ${peso(remaining)}
-                </span>
-
-            </td>
-
-            <td>
-
-                <span class="small-progress">
-
-                    <span
-                        class="small-progress-fill"
-                        style="width:${progress}%">
-                    </span>
-
-                </span>
-
-                <span class="util-percent">
-                    ${percentage.toFixed(2)}%
-                </span>
-
-            </td>
-
-            <td>
-
-                <span class="status ${statusClass}">
-                    ${status}
-                </span>
-
-            </td>
-
+            <td>${index + 1}</td>
+            <td>${editableText("program", program.program, "program-name-input")}</td>
+            <td>${editableText("office", program.office, "office-input")}</td>
+            <td class="money">${moneyInput("ps",program.ps)}</td>
+            <td class="money">${moneyInput("mooe",program.mooe)}</td>
+            <td class="money">${moneyInput("co",program.co)}</td>
+            <td class="money">${isAdmin ? `<input type="number" class="budget-input total-budget-input" data-field="totalProgramBudget" data-index="${index}" min="0" step="0.01" value="${budget}">` : `<span class="program-budget-value">${peso(budget)}</span>`}</td>
+            <td class="money">${isAdmin ? `<input type="number" class="used-input" min="0" step="0.01" value="${used}" data-index="${index}">` : `<span class="used-display">${peso(used)}</span>`}</td>
+            <td class="money"><span class="remaining-value">${peso(remaining)}</span></td>
+            <td><span class="small-progress"><span class="small-progress-fill" style="width:${progress}%"></span></span><span class="util-percent">${percentage.toFixed(2)}%</span></td>
+            <td><span class="status ${statusClass}">${status}</span></td>
+            ${gadCustomColumns.map(function(column){
+                const value = program.customValues && program.customValues[column.key] !== undefined ? program.customValues[column.key] : "";
+                return `<td>${isAdmin ? `<input class="cell-input custom-cell-input" type="text" data-custom-key="${column.key}" data-index="${index}" value="${escapeHTML(value)}">` : escapeHTML(value)}</td>`;
+            }).join("")}
+            ${isAdmin ? `<td class="row-actions-column"><button type="button" class="row-action-btn" onclick="removeGADProgram(${index},event)">Remove</button></td>` : ""}
         `;
-
-
         table.appendChild(row);
-
     });
 
-
-    document.getElementById(
-        "totalPrograms"
-    ).textContent =
-    gadPrograms.length;
-
+    document.getElementById("totalPrograms").textContent = gadPrograms.length;
     updateBudgetSummary();
     updateDashboard();
-
     setupFloatingScrollbar();
-
 }
 
+/* ADMIN TABLE MANAGEMENT */
+async function addGADProgram(event){
+    if(event) event.stopPropagation();
+    if(!isAdmin) return alert("Admin Login muna.");
+    gadPrograms.push({program:"New GAD Program", office:"", ps:0, mooe:0, co:0, customValues:{}});
+    firebaseUsedData = Object.assign({}, getUsedData(), {[gadPrograms.length-1]:0});
+    try{ await saveGADStructure(); await saveUsedData(firebaseUsedData); renderGADPrograms(); }
+    catch(error){ console.error(error); alert("Hindi na-save ang bagong program sa Firebase."); }
+}
+
+async function removeGADProgram(index,event){
+    if(event) event.stopPropagation();
+    if(!isAdmin) return;
+    const program = gadPrograms[index];
+    if(!confirm(`Sigurado ka bang aalisin ang program na ito?\n\n${program.program || "Untitled Program"}`)) return;
+    gadPrograms.splice(index,1);
+    const oldUsed = getUsedData(), newUsed = {};
+    gadPrograms.forEach(function(_,newIndex){
+        const oldIndex = newIndex >= index ? newIndex + 1 : newIndex;
+        newUsed[newIndex] = Number(oldUsed[oldIndex] || 0);
+    });
+    firebaseUsedData = newUsed;
+    try{ await saveGADStructure(); await saveUsedData(newUsed); renderGADPrograms(); }
+    catch(error){ console.error(error); alert("Hindi na-save ang pagtanggal sa Firebase."); }
+}
+
+async function addGADColumn(event){
+    if(event) event.stopPropagation();
+    if(!isAdmin) return;
+    const label = prompt("Ilagay ang pangalan ng bagong column:");
+    if(!label || !label.trim()) return;
+    const key = "custom_" + Date.now().toString(36);
+    gadCustomColumns.push({key:key,label:label.trim()});
+    gadPrograms.forEach(function(program){ if(!program.customValues) program.customValues = {}; program.customValues[key] = ""; });
+    try{ await saveGADStructure(); renderGADPrograms(); }
+    catch(error){ console.error(error); alert("Hindi na-save ang bagong column sa Firebase."); }
+}
+
+async function renameGADColumn(key,event){
+    if(event) event.stopPropagation();
+    if(!isAdmin) return;
+    const column = gadCustomColumns.find(function(item){ return item.key === key; });
+    if(!column) return;
+    const label = prompt("Bagong pangalan ng column:",column.label);
+    if(!label || !label.trim()) return;
+    column.label = label.trim();
+    try{ await firebaseDatabase.ref(GAD_COLUMNS_PATH).set(gadCustomColumns); renderGADPrograms(); }
+    catch(error){ console.error(error); alert("Hindi na-save ang pangalan ng column."); }
+}
+
+async function removeGADColumn(key,event){
+    if(event) event.stopPropagation();
+    if(!isAdmin) return;
+    const column = gadCustomColumns.find(function(item){ return item.key === key; });
+    if(!column || !confirm(`Alisin ang column na '${column.label}' at lahat ng laman nito?`)) return;
+    gadCustomColumns = gadCustomColumns.filter(function(item){ return item.key !== key; });
+    gadPrograms.forEach(function(program){ if(program.customValues) delete program.customValues[key]; });
+    try{ await saveGADStructure(); renderGADPrograms(); }
+    catch(error){ console.error(error); alert("Hindi na-save ang pagtanggal ng column."); }
+}
 
 /* =================================================
    UPDATE ROW
@@ -2303,6 +2217,26 @@ function updateRow(
  * The table is rendered only when needed (initial/auth state).
  * Amount Used edits update the existing row in-place.
  */
+
+// Save editable program names, responsible offices, and user-created column values.
+document.addEventListener("change", async function(event){
+    const input = event.target;
+    if(!isAdmin) return;
+    const index = Number(input.dataset.index);
+    if(!gadPrograms[index]) return;
+    if(input.dataset.editField){
+        gadPrograms[index][input.dataset.editField] = input.value.trim();
+        const row = input.closest("tr");
+        row.dataset.search = (String(gadPrograms[index].program || "") + " " + String(gadPrograms[index].office || "")).toLowerCase();
+        try{ await saveGADStructure(); }
+        catch(error){ console.error(error); alert("Hindi na-save ang pagbabago sa program."); }
+    } else if(input.dataset.customKey){
+        if(!gadPrograms[index].customValues) gadPrograms[index].customValues = {};
+        gadPrograms[index].customValues[input.dataset.customKey] = input.value;
+        try{ await saveGADStructure(); }
+        catch(error){ console.error(error); alert("Hindi na-save ang custom column value."); }
+    }
+});
 
 // PS, MOOE, CO, and Total Program Budget are editable only in Admin Mode.
 // Editing PS/MOOE/CO recalculates the total; editing the total directly overrides it.
@@ -2544,14 +2478,14 @@ async function adminLogin(event){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit PS, MOOE, CO, Total Program Budget, and Amount Used.";
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now add, edit, and remove programs and columns, and edit all budget details.";
 
         renderGADPrograms();
         updateDashboard();
 
         alert(
             "✅ Admin Mode Activated!\n\n" +
-            "You can now edit PS, MOOE, CO, Total Program Budget, and Amount Used."
+            "You can now add, edit, and remove programs and columns, and edit all budget details."
         );
 
     }
@@ -2616,7 +2550,7 @@ async function adminLogout(event){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "👁️ <b>View Only Mode:</b> PS, MOOE, CO, Total Program Budget, and Amount Used can only be edited by authorized administrators.";
+        "👁️ <b>View Only Mode:</b> All program details, budget amounts, custom columns, and Amount Used can only be edited by authorized administrators.";
 
         renderGADPrograms();
         updateDashboard();
@@ -2987,7 +2921,7 @@ firebaseAuth.onAuthStateChanged(function(user){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "✏️ <b>ADMIN EDIT MODE:</b> You can now edit PS, MOOE, CO, Total Program Budget, and Amount Used.";
+        "✏️ <b>ADMIN EDIT MODE:</b> You can now add, edit, and remove programs and columns, and edit all budget details.";
 
     }
     else{
@@ -3007,7 +2941,7 @@ firebaseAuth.onAuthStateChanged(function(user){
         document.getElementById(
             "gadEditNotice"
         ).innerHTML =
-        "👁️ <b>View Only Mode:</b> PS, MOOE, CO, Total Program Budget, and Amount Used can only be edited by authorized administrators.";
+        "👁️ <b>View Only Mode:</b> All program details, budget amounts, custom columns, and Amount Used can only be edited by authorized administrators.";
 
     }
 
@@ -3023,6 +2957,7 @@ firebaseAuth.onAuthStateChanged(function(user){
 
 startFirebaseListener();
 startProgramBudgetListener();
+startGADStructureListener();
 
 updateDateTime();
 
